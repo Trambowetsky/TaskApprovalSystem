@@ -10,7 +10,6 @@
       <Folder Include="Filters\" />
       <Folder Include="Infrastructure\" />
       <Folder Include="Middleware\" />
-      <Folder Include="Repositories\" />
       <Folder Include="Services\" />
     </ItemGroup>
 
