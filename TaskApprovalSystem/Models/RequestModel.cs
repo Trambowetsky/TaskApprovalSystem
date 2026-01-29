@@ -21,10 +21,15 @@ public enum RequestStatuses
 public class Request
 {
     public Guid Id { get; set; }
-    public string Title { get; set; }
+    public required string Title { get; set; }
     public RequestTypes Type { get; set; }
     public string Description { get; set; }
     public RequestStatuses Status { get; set; }
     public DateTime CreatedOn { get; set; }
+    public Guid CreatedById { get; set; }
     public User CreatedBy { get; set; }
+    public DateTime? UpdatedOn { get; set; }
+    public Guid? AssignedToId { get; set; }
+    public User? AssignedTo { get; set; }
+    public string? ManagerComment { get; set; }
 }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using TaskApprovalSystem.Models;
+using TaskApprovalSystem.Services;
 using TaskApprovalSystem.ViewModels;
 
 namespace TaskApprovalSystem.Controllers;
@@ -7,8 +8,10 @@ namespace TaskApprovalSystem.Controllers;
 public class RequestController : Controller
 {
     private readonly AppDbContext _context;
-    public RequestController(AppDbContext context) {
+    private readonly IRequestService _requestService;
+    public RequestController(AppDbContext context, IRequestService requestService) {
         _context = context;
+        _requestService = requestService;
     }
     [HttpGet]
     public IActionResult Create()
@@ -37,5 +40,10 @@ public class RequestController : Controller
         _context.SaveChanges();
 
         return RedirectToAction(nameof(Index));
+    }
+    public async Task<IActionResult> Approve(Guid id)
+    {
+        await _requestService.ApproveAsync(id);
+        return RedirectToAction("Index");
     }
 }

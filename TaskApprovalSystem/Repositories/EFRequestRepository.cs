@@ -1,35 +1,56 @@
+using Microsoft.EntityFrameworkCore;
 using TaskApprovalSystem.Models;
 
 namespace TaskApprovalSystem.Repositories;
 
 public interface IRequestRepository
 {
-    IEnumerable<Request> GetAll();
-    Request? GetById(Guid id);
-    void Add(Request request);
-    void Update(Request request);
+    Task<List<Request>> GetAllAsync();
+    Task<Request?> GetByIdAsync(Guid id);
+    Task AddAsync(Request request);
+    Task UpdateAsync(Request request);
+    Task DeleteAsync(Guid id);
 }
-
-public class EFRequestRepository : IRequestRepository
+public class EfRequestRepository : IRequestRepository
 {
     private readonly AppDbContext _context;
-    public EFRequestRepository(AppDbContext context)
+
+    public EfRequestRepository(AppDbContext context)
     {
         _context = context;
     }
-    public IEnumerable<Request> GetAll() => _context.Requests.ToList();
 
-    public Request? GetById(Guid id) => _context.Requests.FirstOrDefault(x => x.Id == id);
-
-    public void Add(Request request)
+    public async Task<List<Request>> GetAllAsync()
     {
-        _context.Requests.Add(request);
-        _context.SaveChanges();
+        return await _context.Requests
+            .OrderByDescending(x => x.CreatedOn)
+            .ToListAsync();
     }
 
-    public void Update(Request request)
+    public async Task<Request?> GetByIdAsync(Guid id)
+    {
+        return await _context.Requests.FindAsync(id);
+    }
+
+    public async Task AddAsync(Request request)
+    {
+        _context.Requests.Add(request);
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateAsync(Request request)
     {
         _context.Requests.Update(request);
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
+    }
+
+    public async Task DeleteAsync(Guid id)
+    {
+        var entity = await _context.Requests.FindAsync(id);
+        if (entity != null)
+        {
+            _context.Requests.Remove(entity);
+            await _context.SaveChangesAsync();
+        }
     }
 }
