@@ -30,6 +30,10 @@ public class AppDbContext : DbContext
 
             entity.Property(x => x.Type)
                 .HasConversion<string>();
+            
+            entity.HasOne(r => r.CreatedBy)
+                .WithMany()
+                .HasForeignKey(r => r.CreatedById);
         });
     }
 }
