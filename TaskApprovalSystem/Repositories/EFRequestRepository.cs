@@ -53,4 +53,11 @@ public class EfRequestRepository : IRequestRepository
             await _context.SaveChangesAsync();
         }
     }
+    public async Task<List<Request>> GetMyRequestsAsync(Guid userId)
+    {
+        return await _context.Requests
+            .Where(r => r.CreatedById == userId)
+            .OrderByDescending(r => r.CreatedOn)
+            .ToListAsync();
+    }
 }
