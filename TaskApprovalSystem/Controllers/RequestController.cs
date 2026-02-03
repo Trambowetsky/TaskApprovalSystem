@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TaskApprovalSystem.Models;
@@ -6,6 +7,9 @@ using TaskApprovalSystem.ViewModels;
 
 namespace TaskApprovalSystem.Controllers;
 
+[Authorize]
+[ApiController]
+[Route("api/requests")]
 public class RequestController : Controller
 {
     private readonly AppDbContext _context;
@@ -19,7 +23,15 @@ public class RequestController : Controller
     {
         return View();
     }
-    
+    [HttpGet("my")]
+    public async Task<IActionResult> GetMy()
+    {
+        var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+        var requests = await _requestService.GetMyRequestsAsync(userId);
+
+        return Ok(requests);
+    }
     [HttpPost]
     [ValidateAntiForgeryToken]
     public IActionResult Create(CreateRequestViewModel model)
@@ -42,6 +54,7 @@ public class RequestController : Controller
 
         return RedirectToAction(nameof(Index));
     }
+    
     [Authorize(Roles = "Manager, Admin")]
     public async Task<IActionResult> Approve(Guid id)
     {

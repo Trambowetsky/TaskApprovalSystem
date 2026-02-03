@@ -10,6 +10,7 @@ public interface IRequestRepository
     Task AddAsync(Request request);
     Task UpdateAsync(Request request);
     Task DeleteAsync(Guid id);
+    Task<List<Request>> GetByUserIdAsync(Guid userId);
 }
 public class EfRequestRepository : IRequestRepository
 {
@@ -53,7 +54,7 @@ public class EfRequestRepository : IRequestRepository
             await _context.SaveChangesAsync();
         }
     }
-    public async Task<List<Request>> GetMyRequestsAsync(Guid userId)
+    public async Task<List<Request>> GetByUserIdAsync(Guid userId)
     {
         return await _context.Requests
             .Where(r => r.CreatedById == userId)

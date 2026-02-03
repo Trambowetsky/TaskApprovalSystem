@@ -14,6 +14,7 @@ public interface IRequestService
     Task RejectAsync(Guid requestId, string? reason);
 
     Task CancelAsync(Guid requestId);
+    Task<List<Request>> GetMyRequestsAsync(Guid userId);
 }
 
 public class RequestService : IRequestService
@@ -91,5 +92,9 @@ public class RequestService : IRequestService
         request.Status = RequestStatuses.Cancelled;
 
         await _repository.UpdateAsync(request);
+    }
+    public async Task<List<Request>> GetMyRequestsAsync(Guid userId)
+    {
+        return await _repository.GetByUserIdAsync(userId);
     }
 }
