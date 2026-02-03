@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TaskApprovalSystem.Middleware;
 using TaskApprovalSystem.Models;
 using TaskApprovalSystem.Repositories;
 using TaskApprovalSystem.Services;
@@ -13,8 +14,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 var app = builder.Build();
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
