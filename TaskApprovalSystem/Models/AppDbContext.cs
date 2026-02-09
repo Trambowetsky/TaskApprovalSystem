@@ -5,6 +5,8 @@ namespace TaskApprovalSystem.Models;
 public class AppDbContext : DbContext
 {
     public DbSet<Request> Requests { get; set; }
+    
+    public DbSet<AuditLog> AuditLogs { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options)
         : base(options)
@@ -34,6 +36,21 @@ public class AppDbContext : DbContext
             entity.HasOne(r => r.CreatedBy)
                 .WithMany()
                 .HasForeignKey(r => r.CreatedById);
+        });
+        
+        modelBuilder.Entity<AuditLog>(entity =>
+        {
+            entity.HasKey(x => x.Id);
+
+            entity.Property(x => x.OldStatus)
+                .HasConversion<string>();
+
+            entity.Property(x => x.NewStatus)
+                .HasConversion<string>();
+
+            entity.Property(x => x.ChangedBy)
+                .IsRequired()
+                .HasMaxLength(100);
         });
     }
 }
