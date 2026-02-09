@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TaskApprovalSystem.Filters;
 using TaskApprovalSystem.Middleware;
 using TaskApprovalSystem.Models;
 using TaskApprovalSystem.Repositories;
@@ -9,6 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<IRequestRepository, EfRequestRepository>();
 builder.Services.AddScoped<IRequestService, RequestService>();
+builder.Services.AddScoped<RequestAuditFilter>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
