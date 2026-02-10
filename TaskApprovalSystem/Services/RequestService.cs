@@ -98,3 +98,18 @@ public class RequestService : IRequestService
         return await _repository.GetByUserIdAsync(userId);
     }
 }
+
+public class RequestStateMachine
+{
+    public static bool CanTransition(RequestStatuses from, RequestStatuses to)
+    {
+        return from switch
+        {
+            RequestStatuses.Draft => to == RequestStatuses.Pending,
+            RequestStatuses.Pending => 
+                to == RequestStatuses.Approved || 
+                to == RequestStatuses.Rejected,
+            _ => false
+        };
+    }
+}
