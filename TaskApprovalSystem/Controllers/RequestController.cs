@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TaskApprovalSystem.Attributes;
 using TaskApprovalSystem.Models;
 using TaskApprovalSystem.Services;
 using TaskApprovalSystem.ViewModels;
@@ -55,7 +56,7 @@ public class RequestController : Controller
         return RedirectToAction(nameof(Index));
     }
     
-    [Authorize(Roles = "Manager, Admin")]
+    [RequireRole(UserRoles.Manager, UserRoles.Admin)]
     public async Task<IActionResult> Approve(Guid id)
     {
         await _requestService.ApproveAsync(id);
