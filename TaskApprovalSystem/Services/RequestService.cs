@@ -5,15 +5,13 @@ namespace TaskApprovalSystem.Services;
 
 public interface IRequestService
 {
-    Task<Request> CreateAsync(string title, string description, RequestTypes type, string createdBy);
+    Task<Request> CreateAsync(string title, string description, RequestTypes type, Guid createdById);
 
     Task SubmitAsync(Guid requestId);
-
     Task ApproveAsync(Guid requestId);
-
     Task RejectAsync(Guid requestId, string? reason);
-
     Task CancelAsync(Guid requestId);
+
     Task<List<Request>> GetMyRequestsAsync(Guid userId);
 }
 
@@ -21,11 +19,16 @@ public class RequestService : IRequestService
 {
     private readonly IRequestRepository _repository;
 
-    public RequestService(IRequestRepository requestRepository)
+    public RequestService(IRequestRepository repository)
     {
-        _repository = requestRepository;
+        _repository = repository;
     }
-    public async Task<Request> CreateAsync(string title, string description, RequestTypes type, string createdBy)
+
+    public async Task<Request> CreateAsync(
+        string title,
+        string description,
+        RequestTypes type,
+        Guid createdById)
     {
         var request = new Request
         {
@@ -35,80 +38,65 @@ public class RequestService : IRequestService
             Type = type,
             Status = RequestStatuses.Draft,
             CreatedOn = DateTime.UtcNow,
-            CreatedBy = new User { Name = createdBy }
+            CreatedById = createdById
         };
 
         await _repository.AddAsync(request);
         return request;
     }
 
-    public async Task SubmitAsync(Guid requestId)
+    public Task SubmitAsync(Guid requestId) =>
+        ChangeStatusAsync(requestId, RequestStatuses.Pending);
+
+    public Task ApproveAsync(Guid requestId) =>
+        ChangeStatusAsync(requestId, RequestStatuses.Approved);
+
+    public Task RejectAsync(Guid requestId, string? reason)
     {
-        var request = await _repository.GetByIdAsync(requestId)
-                      ?? throw new InvalidOperationException("Request not found");
-
-        if (request.Status != RequestStatuses.Draft)
-            throw new InvalidOperationException("Only draft requests can be submitted");
-
-        request.Status = RequestStatuses.Pending;
-
-        await _repository.UpdateAsync(request);
+        // reason можно позже использовать для истории
+        return ChangeStatusAsync(requestId, RequestStatuses.Rejected);
     }
 
-    public async Task ApproveAsync(Guid requestId)
-    {
-        var request = await _repository.GetByIdAsync(requestId)
-                      ?? throw new InvalidOperationException("Request not found");
+    public Task CancelAsync(Guid requestId) =>
+        ChangeStatusAsync(requestId, RequestStatuses.Cancelled);
 
-        if (request.Status != RequestStatuses.Pending)
-            throw new InvalidOperationException("Only pending requests can be approved");
-
-        request.Status = RequestStatuses.Approved;
-
-        await _repository.UpdateAsync(request);
-    }
-
-    public async Task RejectAsync(Guid requestId, string? reason)
-    {
-        var request = await _repository.GetByIdAsync(requestId)
-                      ?? throw new InvalidOperationException("Request not found");
-
-        if (request.Status != RequestStatuses.Pending)
-            throw new InvalidOperationException("Only pending requests can be rejected");
-
-        request.Status = RequestStatuses.Rejected;
-
-        await _repository.UpdateAsync(request);
-    }
-
-    public async Task CancelAsync(Guid requestId)
-    {
-        var request = await _repository.GetByIdAsync(requestId)
-                      ?? throw new InvalidOperationException("Request not found");
-
-        if (request.Status is not (RequestStatuses.Draft or RequestStatuses.Pending))
-            throw new InvalidOperationException("Only draft or pending requests can be cancelled");
-
-        request.Status = RequestStatuses.Cancelled;
-
-        await _repository.UpdateAsync(request);
-    }
     public async Task<List<Request>> GetMyRequestsAsync(Guid userId)
     {
         return await _repository.GetByUserIdAsync(userId);
     }
+
+    private async Task ChangeStatusAsync(Guid requestId, RequestStatuses newStatus)
+    {
+        var request = await _repository.GetByIdAsync(requestId)
+                      ?? throw new InvalidOperationException("Request not found");
+
+        if (!RequestStateMachine.CanTransition(request.Status, newStatus))
+        {
+            throw new InvalidOperationException(
+                $"Cannot transition from {request.Status} to {newStatus}");
+        }
+
+        request.Status = newStatus;
+
+        await _repository.UpdateAsync(request);
+    }
 }
 
-public class RequestStateMachine
+public static class RequestStateMachine
 {
     public static bool CanTransition(RequestStatuses from, RequestStatuses to)
     {
         return from switch
         {
-            RequestStatuses.Draft => to == RequestStatuses.Pending,
-            RequestStatuses.Pending => 
-                to == RequestStatuses.Approved || 
-                to == RequestStatuses.Rejected,
+            RequestStatuses.Draft =>
+                to == RequestStatuses.Pending ||
+                to == RequestStatuses.Cancelled,
+
+            RequestStatuses.Pending =>
+                to == RequestStatuses.Approved ||
+                to == RequestStatuses.Rejected ||
+                to == RequestStatuses.Cancelled,
+
             _ => false
         };
     }
